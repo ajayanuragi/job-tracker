@@ -6,6 +6,7 @@ import io.github.ajayanuragi.job_tracker.dto.response.JobResponse;
 import io.github.ajayanuragi.job_tracker.entity.Job;
 import io.github.ajayanuragi.job_tracker.enums.EmploymentType;
 import io.github.ajayanuragi.job_tracker.enums.WorkplaceType;
+import io.github.ajayanuragi.job_tracker.exception.ResourceNotFoundException;
 import io.github.ajayanuragi.job_tracker.repository.JobRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -102,6 +103,11 @@ class JobServiceTest {
         assertEquals(1L, jobResponses.getFirst().id());
         assertEquals("Java Backend Developer", jobResponses.getFirst().title());
         assertEquals("Acme Technologies", jobResponses.getFirst().companyName());
+
+        assertEquals(2L, jobResponses.get(1).id());
+        assertEquals("React Developer", jobResponses.get(1).title());
+        assertEquals("Tech Solutions", jobResponses.get(1).companyName());
+
 
         verify(jobRepository).findByDeletedFalse();
 
@@ -225,5 +231,39 @@ class JobServiceTest {
         assertEquals("https://example.com/jobs/java", response.jobUrl());
         verify(jobRepository).findById(1L);
         verify(jobRepository).save(job);
+    }
+
+    @Test
+    void findById_whenJobDoesNotExist_throwsResourceNotFoundException() {
+        when(jobRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, ()-> jobService.findById(1L));
+
+        verify(jobRepository).findById(1L);
+
+    }
+
+    @Test
+    void findById_whenJobIsDeleted_throwsResourceNotFoundException() {
+        Job job = new Job(
+                1L,
+                "Java Backend Developer",
+                "Acme Technologies",
+                "Develop REST APIs using Spring Boot.",
+                "Remote",
+                EmploymentType.FULL_TIME,
+                WorkplaceType.REMOTE,
+                "https://example.com/jobs/java"
+        );
+
+        job.softDelete();
+
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> jobService.findById(1L)
+        );
+
+        verify(jobRepository).findById(1L);
     }
 }
