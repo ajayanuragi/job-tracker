@@ -80,8 +80,8 @@ public class JobService {
                 request.workplaceType(),
                 request.jobUrl()
         );
-
-        return mapToResponse(job);
+        Job updatedJob = jobRepository.save(job);
+        return mapToResponse(updatedJob);
     }
 
     public JobResponse patch(Long id, JobPatchRequest request) {
