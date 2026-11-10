@@ -124,7 +124,7 @@ public class Job {
     }
 
     @PrePersist
-    protected void onCreate(){
+    protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 
