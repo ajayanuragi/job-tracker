@@ -36,7 +36,7 @@ public class JobController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Jobs retrieved successfully",
-            content = @Content(schema = @Schema(implementation = JobResponse.class))),
+                    content = @Content(schema = @Schema(implementation = JobResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters")
     })
     @GetMapping
@@ -44,7 +44,7 @@ public class JobController {
             @Parameter(
                     description =
                             "Pagination and sorting. Supported sort fields: createdAt, title, companyName"
-    ) @ParameterObject Pageable pageable) {
+            ) @ParameterObject Pageable pageable) {
         Page<JobResponse> jobs = jobService.findAll(pageable);
         return ResponseEntity.ok(jobs);
     }

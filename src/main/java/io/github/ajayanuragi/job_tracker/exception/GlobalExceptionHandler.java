@@ -35,4 +35,16 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(400, "Bad Request", "Invalid request body. Check your JSON fields and enum values.", LocalDateTime.now());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
+        ErrorResponse error = new ErrorResponse(
+                409,
+                "Conflict",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
 }
