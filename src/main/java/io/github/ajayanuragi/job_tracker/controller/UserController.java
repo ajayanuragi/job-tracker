@@ -1,6 +1,8 @@
 package io.github.ajayanuragi.job_tracker.controller;
 
+import io.github.ajayanuragi.job_tracker.dto.request.LoginRequest;
 import io.github.ajayanuragi.job_tracker.dto.request.UserRegistrationRequest;
+import io.github.ajayanuragi.job_tracker.dto.response.LoginResponse;
 import io.github.ajayanuragi.job_tracker.dto.response.UserResponse;
 import io.github.ajayanuragi.job_tracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users")
-@Tag(name = "Users", description = "Operations for user registration")
+@Tag(name = "Users", description = "User registration and authentication")
 public class UserController {
     private final UserService userService;
 
@@ -34,6 +36,18 @@ public class UserController {
     public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody UserRegistrationRequest request) {
         UserResponse userResponse = userService.registerUser(request);
         return new ResponseEntity<>(userResponse, HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Login user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login successful"),
+            @ApiResponse(responseCode = "400", description = "Invalid request details"),
+            @ApiResponse(responseCode = "401", description = "Invalid email or password")
+    })
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = userService.login(request);
+        return ResponseEntity.ok(response);
     }
 
 }

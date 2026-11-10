@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Jobs", description = "Operations for managing job listings")
 @RestController
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/jobs")
 public class JobController {
     private final JobService jobService;
