@@ -107,13 +107,13 @@ class JobControllerTest {
     }
 
     @Test
-    void deleteJOb() throws Exception {
+    void deleteJob() throws Exception {
         mockMvc.perform(delete("/api/jobs/1"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    void Update() throws Exception {
+    void updateJob() throws Exception {
         JobRequest request = new JobRequest(
                 "Senior Java Developer",
                 "Acme Technologies",
@@ -173,6 +173,54 @@ class JobControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Senior Java Developer"));
+    }
+    @Test
+    void create_whenRequiredFieldsAreMissing_returnsBadRequest() throws Exception {
+        String invalidRequest = """
+            {
+                "title": "",
+                "companyName": "",
+                "description": "",
+                "employmentType": "FULL_TIME",
+                "workplaceType": "REMOTE"
+            }
+            """;
+        mockMvc.perform(post("/api/jobs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidRequest)
+        ).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void update_whenRequiredFieldsAreMissing_returnsBadRequest() throws Exception {
+        String invalidRequest = """
+            {
+                "title": "",
+                "companyName": "",
+                "description": "",
+                "employmentType": "FULL_TIME",
+                "workplaceType": "REMOTE"
+            }
+            """;
+
+        mockMvc.perform(put("/api/jobs/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void patch_whenTitleExceedsMaxLength_returnsBadRequest() throws Exception {
+        String longTitle = "A".repeat(151);
+
+        String invalidRequest = objectMapper.writeValueAsString(
+                new JobPatchRequest(longTitle, null, null, null, null, null, null)
+        );
+
+        mockMvc.perform(patch("/api/jobs/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest());
     }
 
 
