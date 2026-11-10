@@ -3,7 +3,7 @@ package io.github.ajayanuragi.job_tracker.dto.response;
 import java.time.LocalDateTime;
 
 public record ErrorResponse(
-        int Status,
+        int status,
         String error,
         String message,
         LocalDateTime timestamp
