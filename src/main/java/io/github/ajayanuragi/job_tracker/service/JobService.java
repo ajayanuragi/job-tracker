@@ -6,6 +6,8 @@ import io.github.ajayanuragi.job_tracker.dto.response.JobResponse;
 import io.github.ajayanuragi.job_tracker.entity.Job;
 import io.github.ajayanuragi.job_tracker.exception.ResourceNotFoundException;
 import io.github.ajayanuragi.job_tracker.repository.JobRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,12 +40,9 @@ public class JobService {
                 savedJob.getLocation(),
                 savedJob.getEmploymentType(),
                 savedJob.getWorkplaceType(),
-                savedJob.getJobUrl()
+                savedJob.getJobUrl(),
+                savedJob.getCreatedAt()
         );
-    }
-
-    public List<JobResponse> findAll() {
-        return jobRepository.findByDeletedFalse().stream().map(this::mapToResponse).toList();
     }
 
     public JobResponse findById(Long id) {
@@ -59,7 +58,8 @@ public class JobService {
                 job.getLocation(),
                 job.getEmploymentType(),
                 job.getWorkplaceType(),
-                job.getJobUrl()
+                job.getJobUrl(),
+                job.getCreatedAt()
         );
     }
 
@@ -106,5 +106,9 @@ public class JobService {
                 .filter(job -> !job.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Job not found with ID: " + id));
+    }
+
+    public Page<JobResponse> findAll(Pageable pageable){
+        return jobRepository.findAllByDeletedFalse(pageable).map(this::mapToResponse);
     }
 }

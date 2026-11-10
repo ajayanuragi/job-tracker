@@ -3,6 +3,8 @@ package io.github.ajayanuragi.job_tracker.dto.response;
 import io.github.ajayanuragi.job_tracker.enums.EmploymentType;
 import io.github.ajayanuragi.job_tracker.enums.WorkplaceType;
 
+import java.time.LocalDateTime;
+
 public record JobResponse(
         Long id,
         String title,
@@ -11,6 +13,7 @@ public record JobResponse(
         String location,
         EmploymentType employmentType,
         WorkplaceType workplaceType,
-        String jobUrl
+        String jobUrl,
+        LocalDateTime createdAt
 ) {
 }

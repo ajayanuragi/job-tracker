@@ -4,6 +4,8 @@ import io.github.ajayanuragi.job_tracker.enums.EmploymentType;
 import io.github.ajayanuragi.job_tracker.enums.WorkplaceType;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 public class Job {
     @Id
@@ -21,6 +23,8 @@ public class Job {
     private String jobUrl;
     @Column(nullable = false)
     private Boolean deleted = false;
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     public Job(Long id, String title, String companyName, String description, String location, EmploymentType employmentType, WorkplaceType workplaceType, String jobUrl) {
         this.id = id;
@@ -78,6 +82,10 @@ public class Job {
         this.deleted = true;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
     public void updateDetails(
             String title,
             String companyName,
@@ -114,4 +122,10 @@ public class Job {
         if (workplaceType != null) this.workplaceType = workplaceType;
         if (jobUrl != null) this.jobUrl = jobUrl;
     }
+
+    @PrePersist
+    protected void onCreate(){
+        createdAt = LocalDateTime.now();
+    }
+
 }

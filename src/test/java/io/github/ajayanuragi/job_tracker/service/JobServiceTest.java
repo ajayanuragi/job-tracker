@@ -15,6 +15,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -71,47 +74,6 @@ class JobServiceTest {
 
     }
 
-    @Test
-    void findAll() {
-        Job job1 = new Job(
-                1L,
-                "Java Backend Developer",
-                "Acme Technologies",
-                "Develop REST APIs using Java and Spring Boot.",
-                "Remote",
-                EmploymentType.FULL_TIME,
-                WorkplaceType.REMOTE,
-                "https://example.com/jobs/java-backend"
-        );
-
-        Job job2 = new Job(
-                2L,
-                "React Developer",
-                "Tech Solutions",
-                "Build responsive web applications using React and TypeScript.",
-                "Bangalore",
-                EmploymentType.CONTRACT,
-                WorkplaceType.HYBRID,
-                "https://example.com/jobs/react-developer"
-        );
-
-        List<Job> jobs =  List.of(job1, job2);
-        when(jobRepository.findByDeletedFalse()).thenReturn(jobs);
-        List<JobResponse> jobResponses = jobService.findAll();
-
-        assertEquals(2, jobResponses.size());
-        assertEquals(1L, jobResponses.getFirst().id());
-        assertEquals("Java Backend Developer", jobResponses.getFirst().title());
-        assertEquals("Acme Technologies", jobResponses.getFirst().companyName());
-
-        assertEquals(2L, jobResponses.get(1).id());
-        assertEquals("React Developer", jobResponses.get(1).title());
-        assertEquals("Tech Solutions", jobResponses.get(1).companyName());
-
-
-        verify(jobRepository).findByDeletedFalse();
-
-    }
 
     @Test
     void findById() {
@@ -265,5 +227,39 @@ class JobServiceTest {
         );
 
         verify(jobRepository).findById(1L);
+    }
+
+
+    @Test
+    void findAllPaginated() {
+        Job job1 = new Job(
+                1L, "Java Backend Developer", "Acme Technologies",
+                "Develop REST APIs.", "Remote",
+                EmploymentType.FULL_TIME, WorkplaceType.REMOTE,
+                "https://example.com/jobs/java"
+        );
+
+        Job job2 = new Job(
+                2L, "React Developer", "Tech Solutions",
+                "Build React applications.", "Bangalore",
+                EmploymentType.CONTRACT, WorkplaceType.HYBRID,
+                "https://example.com/jobs/react"
+        );
+
+        PageRequest pageable = PageRequest.of(0, 2);
+
+        Page<Job> jobPage = new PageImpl<>(List.of(job1, job2), pageable, 2);
+
+        when(jobRepository.findAllByDeletedFalse(pageable))
+                .thenReturn(jobPage);
+
+        Page<JobResponse> response = jobService.findAll(pageable);
+
+        assertEquals(2, response.getContent().size());
+        assertEquals(2, response.getTotalElements());
+        assertEquals(1L, response.getContent().getFirst().id());
+        assertEquals("Java Backend Developer", response.getContent().getFirst().title());
+
+        verify(jobRepository).findAllByDeletedFalse(pageable);
     }
 }

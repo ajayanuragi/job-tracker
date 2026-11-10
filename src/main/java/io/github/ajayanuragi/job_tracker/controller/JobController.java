@@ -5,6 +5,8 @@ import io.github.ajayanuragi.job_tracker.dto.request.JobRequest;
 import io.github.ajayanuragi.job_tracker.dto.response.JobResponse;
 import io.github.ajayanuragi.job_tracker.service.JobService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,10 +25,11 @@ public class JobController {
     }
 
     @GetMapping
-    public ResponseEntity<List<JobResponse>> getAllJobs() {
-        List<JobResponse> jobs = jobService.findAll();
-        return new ResponseEntity<>(jobs, HttpStatus.OK);
+    public ResponseEntity<Page<JobResponse>> getAllJobs(Pageable pageable) {
+         Page<JobResponse> jobs = jobService.findAll(pageable);
+        return ResponseEntity.ok(jobs);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<JobResponse> findById(@PathVariable Long id) {
@@ -55,4 +58,6 @@ public class JobController {
         JobResponse updatedJob = jobService.patch(id, job);
         return ResponseEntity.ok(updatedJob);
     }
+
+
 }

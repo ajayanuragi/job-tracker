@@ -9,12 +9,14 @@ import io.github.ajayanuragi.job_tracker.service.JobService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -43,15 +45,29 @@ class JobControllerTest {
                 "Remote",
                 EmploymentType.FULL_TIME,
                 WorkplaceType.REMOTE,
-                "https://example.com/jobs/java"
+                "https://example.com/jobs/java",
+                LocalDateTime.now()
         );
 
-        when(jobService.findAll()).thenReturn(List.of(job));
+        PageRequest pageable = PageRequest.of(
+                0,
+                10,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+        Page<JobResponse> jobPage = new PageImpl<>(List.of(job), pageable, 1);
 
-        mockMvc.perform(get("/api/jobs"))
+        when(jobService.findAll(pageable)).thenReturn(jobPage);
+
+        mockMvc.perform(get("/api/jobs")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "createdAt,desc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].title").value("Java Backend Developer"));
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Java Backend Developer"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.sort.sorted").value(true));
     }
 
     @Test
@@ -64,7 +80,8 @@ class JobControllerTest {
                 "Remote",
                 EmploymentType.FULL_TIME,
                 WorkplaceType.REMOTE,
-                "https://example.com/jobs/java"
+                "https://example.com/jobs/java",
+                LocalDateTime.now()
         );
 
         when(jobService.findById(1L)).thenReturn(job);
@@ -94,7 +111,8 @@ class JobControllerTest {
                 "Remote",
                 EmploymentType.FULL_TIME,
                 WorkplaceType.REMOTE,
-                "https://example.com/jobs/java"
+                "https://example.com/jobs/java",
+                LocalDateTime.now()
         );
 
         when(jobService.create(request)).thenReturn(job);
@@ -131,7 +149,8 @@ class JobControllerTest {
                 "Remote",
                 EmploymentType.FULL_TIME,
                 WorkplaceType.REMOTE,
-                "https://example.com/jobs/senior-java"
+                "https://example.com/jobs/senior-java",
+                LocalDateTime.now()
         );
 
         when(jobService.update(1L, request)).thenReturn(response);
@@ -163,7 +182,8 @@ class JobControllerTest {
                 "Remote",
                 EmploymentType.FULL_TIME,
                 WorkplaceType.REMOTE,
-                "https://example.com/jobs/java"
+                "https://example.com/jobs/java",
+                LocalDateTime.now()
         );
 
         when(jobService.patch(1L, request)).thenReturn(response);
