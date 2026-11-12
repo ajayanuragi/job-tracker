@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.verify;
 
 @WebMvcTest(ApplicationController.class)
 @Import(SecurityConfig.class)
@@ -145,5 +146,90 @@ class ApplicationControllerTest {
     void getUserApplications_returnsUnauthorizedWhenNotAuthenticated() throws Exception {
         mockMvc.perform(get("/api/applications"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getUserApplications_passesPaginationParameters() throws Exception {
+        when(applicationService.getUserApplications(
+                eq("test@example.com"),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/applications")
+                        .param("page", "1")
+                        .param("size", "5")
+                        .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
+                .andExpect(status().isOk());
+
+        verify(applicationService).getUserApplications(
+                eq("test@example.com"),
+                isNull(),
+                isNull(),
+                isNull(),
+                argThat(pageable ->
+                        pageable.getPageNumber() == 1 &&
+                                pageable.getPageSize() == 5
+                )
+        );
+    }
+
+    @Test
+    void getUserApplications_passesSortingParameters() throws Exception {
+        when(applicationService.getUserApplications(
+                eq("test@example.com"),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/applications")
+                        .param("sort", "appliedAt,desc")
+                        .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
+                .andExpect(status().isOk());
+
+        verify(applicationService).getUserApplications(
+                eq("test@example.com"),
+                isNull(),
+                isNull(),
+                isNull(),
+                argThat(pageable ->
+                        pageable.getSort().getOrderFor("appliedAt") != null &&
+                                pageable.getSort().getOrderFor("appliedAt").isDescending()
+                )
+        );
+    }
+
+    @Test
+    void getUserApplications_passesPaginationAndSortingParameters() throws Exception {
+        when(applicationService.getUserApplications(
+                eq("test@example.com"),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/applications")
+                        .param("page", "2")
+                        .param("size", "10")
+                        .param("sort", "appliedAt,desc")
+                        .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
+                .andExpect(status().isOk());
+
+        verify(applicationService).getUserApplications(
+                eq("test@example.com"),
+                isNull(),
+                isNull(),
+                isNull(),
+                argThat(pageable ->
+                        pageable.getPageNumber() == 2 &&
+                                pageable.getPageSize() == 10 &&
+                                pageable.getSort().getOrderFor("appliedAt").isDescending()
+                )
+        );
     }
 }
