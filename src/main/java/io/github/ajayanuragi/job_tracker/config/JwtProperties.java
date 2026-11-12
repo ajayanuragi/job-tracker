@@ -14,12 +14,12 @@ public class JwtProperties {
         return secret;
     }
 
-    public long getExpiration() {
-        return expiration;
-    }
-
     public void setSecret(String secret) {
         this.secret = secret;
+    }
+
+    public long getExpiration() {
+        return expiration;
     }
 
     public void setExpiration(long expiration) {
