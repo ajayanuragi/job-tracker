@@ -60,6 +60,16 @@ public class Application {
         updatedAt = LocalDateTime.now();
     }
 
+    public void updateDetails(ApplicationStatus status, String notes) {
+        if (status != null) {
+            this.status = status;
+        }
+
+        if (notes != null) {
+            this.notes = notes;
+        }
+    }
+
     public Long getId() {
         return id;
     }

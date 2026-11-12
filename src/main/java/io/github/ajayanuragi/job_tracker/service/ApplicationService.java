@@ -1,5 +1,6 @@
 package io.github.ajayanuragi.job_tracker.service;
 
+import io.github.ajayanuragi.job_tracker.dto.request.ApplicationPatchRequest;
 import io.github.ajayanuragi.job_tracker.dto.request.ApplicationRequest;
 import io.github.ajayanuragi.job_tracker.dto.response.ApplicationResponse;
 import io.github.ajayanuragi.job_tracker.entity.Application;
@@ -71,6 +72,21 @@ public class ApplicationService {
         User user = getUserByEmail(userEmail);
         Application application = applicationRepository.findByIdAndUserId(applicationId, user.getId()).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         return mapToResponse(application);
+    }
+
+    @Transactional
+    public ApplicationResponse patchApplication(
+            Long applicationId,
+            ApplicationPatchRequest request,
+            String userEmail
+    ){
+        User user = getUserByEmail(userEmail);
+
+        Application application = applicationRepository.findByIdAndUserId(applicationId, user.getId()).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+        application.updateDetails(request.status(), request.notes());
+
+        return mapToResponse(application);
+
     }
 
     private User getUserByEmail(String email) {
