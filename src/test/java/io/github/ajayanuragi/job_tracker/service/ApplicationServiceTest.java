@@ -1,5 +1,6 @@
 package io.github.ajayanuragi.job_tracker.service;
 
+import io.github.ajayanuragi.job_tracker.dto.request.ApplicationPatchRequest;
 import io.github.ajayanuragi.job_tracker.dto.request.ApplicationRequest;
 import io.github.ajayanuragi.job_tracker.entity.Application;
 import io.github.ajayanuragi.job_tracker.entity.Job;
@@ -316,5 +317,131 @@ class ApplicationServiceTest {
 
         verify(applicationRepository, never())
                 .findByIdAndUserId(anyLong(), anyLong());
+    }
+
+    @Test
+    void patchApplication_updatesStatusAndNotes() {
+        String email = "test@example.com";
+
+        User user = mock(User.class);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(1L);
+
+        Job job = mock(Job.class);
+        when(job.getId()).thenReturn(2L);
+        when(job.getTitle()).thenReturn("Java Developer");
+        when(job.getCompanyName()).thenReturn("ABC Company");
+
+        Application application = mock(Application.class);
+        when(applicationRepository.findByIdAndUserId(3L, 1L))
+                .thenReturn(Optional.of(application));
+        when(application.getJob()).thenReturn(job);
+        when(application.getId()).thenReturn(3L);
+        when(application.getStatus()).thenReturn(ApplicationStatus.INTERVIEW);
+        when(application.getNotes()).thenReturn("Technical interview scheduled");
+
+        ApplicationPatchRequest request = new ApplicationPatchRequest(
+                ApplicationStatus.INTERVIEW,
+                "Technical interview scheduled"
+        );
+
+        ApplicationResponse response =
+                applicationService.patchApplication(3L, request, email);
+
+        verify(application).updateDetails(
+                ApplicationStatus.INTERVIEW,
+                "Technical interview scheduled"
+        );
+
+        assertEquals(ApplicationStatus.INTERVIEW, response.status());
+        assertEquals("Technical interview scheduled", response.notes());
+    }
+
+    @Test
+    void patchApplication_clearsNotesWhenEmptyStringProvided() {
+        String email = "test@example.com";
+
+        User user = mock(User.class);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(1L);
+
+        Application application = mock(Application.class);
+
+        Job job = mock(Job.class);
+
+        when(job.getId()).thenReturn(2L);
+        when(job.getTitle()).thenReturn("Java Developer");
+        when(job.getCompanyName()).thenReturn("ABC Company");
+
+        when(application.getJob()).thenReturn(job);
+        when(application.getId()).thenReturn(3L);
+        when(application.getStatus()).thenReturn(ApplicationStatus.APPLIED);
+        when(application.getNotes()).thenReturn("");
+
+        when(applicationRepository.findByIdAndUserId(3L, 1L))
+                .thenReturn(Optional.of(application));
+
+        ApplicationPatchRequest request =
+                new ApplicationPatchRequest(null, "");
+
+        ApplicationResponse response =
+                applicationService.patchApplication(3L, request, email);
+
+        verify(application).updateDetails(null, "");
+
+        assertEquals("", response.notes());
+    }
+
+    @Test
+    void patchApplication_keepsStatusWhenStatusIsNull() {
+        String email = "test@example.com";
+
+        User user = mock(User.class);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(1L);
+
+        Application application = mock(Application.class);
+        Job job = mock(Job.class);
+
+        when(applicationRepository.findByIdAndUserId(3L, 1L))
+                .thenReturn(Optional.of(application));
+
+        when(application.getJob()).thenReturn(job);
+        when(application.getId()).thenReturn(3L);
+        when(application.getStatus()).thenReturn(ApplicationStatus.APPLIED);
+        when(application.getNotes()).thenReturn("Updated notes");
+
+        ApplicationPatchRequest request =
+                new ApplicationPatchRequest(null, "Updated notes");
+
+        ApplicationResponse response =
+                applicationService.patchApplication(3L, request, email);
+
+        verify(application).updateDetails(null, "Updated notes");
+
+        assertEquals(ApplicationStatus.APPLIED, response.status());
+        assertEquals("Updated notes", response.notes());
+    }
+
+    @Test
+    void patchApplication_throwsExceptionWhenApplicationNotFound() {
+        String email = "test@example.com";
+
+        User user = mock(User.class);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(1L);
+
+        when(applicationRepository.findByIdAndUserId(3L, 1L))
+                .thenReturn(Optional.empty());
+
+        ApplicationPatchRequest request =
+                new ApplicationPatchRequest(ApplicationStatus.INTERVIEW, "Updated notes");
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> applicationService.patchApplication(3L, request, email)
+        );
+
+        verify(applicationRepository).findByIdAndUserId(3L, 1L);
     }
 }

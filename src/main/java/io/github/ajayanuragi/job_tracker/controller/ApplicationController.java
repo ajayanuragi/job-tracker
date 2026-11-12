@@ -1,5 +1,6 @@
 package io.github.ajayanuragi.job_tracker.controller;
 
+import io.github.ajayanuragi.job_tracker.dto.request.ApplicationPatchRequest;
 import io.github.ajayanuragi.job_tracker.dto.request.ApplicationRequest;
 import io.github.ajayanuragi.job_tracker.dto.response.ApplicationResponse;
 import io.github.ajayanuragi.job_tracker.service.ApplicationService;
@@ -78,5 +79,23 @@ public class ApplicationController {
                 applicationService.getUserApplication(id, jwt.getSubject());
 
         return ResponseEntity.ok(application);
+    }
+
+    @Operation(
+            summary = "Update an application",
+            description = "Partially updates the status and notes of an application belonging to the authenticated user"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Application updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Application not found")
+    })
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApplicationResponse> updateApplication(@PathVariable Long id, @RequestBody ApplicationPatchRequest request, @AuthenticationPrincipal Jwt jwt) {
+
+        ApplicationResponse response = applicationService.patchApplication(id, request, jwt.getSubject());
+        return ResponseEntity.ok(response);
+
     }
 }
