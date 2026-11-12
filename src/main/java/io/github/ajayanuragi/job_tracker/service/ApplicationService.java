@@ -12,6 +12,10 @@ import io.github.ajayanuragi.job_tracker.exception.ResourceNotFoundException;
 import io.github.ajayanuragi.job_tracker.repository.ApplicationRepository;
 import io.github.ajayanuragi.job_tracker.repository.JobRepository;
 import io.github.ajayanuragi.job_tracker.repository.UserRepository;
+import io.github.ajayanuragi.job_tracker.specification.ApplicationSpecifications;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,10 +65,21 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationResponse> getUserApplications(String userEmail) {
+    public Page<ApplicationResponse> getUserApplications(
+            String userEmail,
+            ApplicationStatus status,
+            String companyName,
+            String jobTitle,
+            Pageable pageable
+            ) {
         User user = getUserByEmail(userEmail);
-        List<Application> applications = applicationRepository.findAllByUserId(user.getId());
-        return applications.stream().map(this::mapToResponse).toList();
+
+        Specification<Application> specification =
+                ApplicationSpecifications.filterApplications(
+                        user.getId(), status, companyName, jobTitle
+                );
+
+        return applicationRepository.findAll(specification, pageable).map(this::mapToResponse);
     }
 
     @Transactional(readOnly = true)

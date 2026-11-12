@@ -2,9 +2,11 @@ package io.github.ajayanuragi.job_tracker.service;
 
 import io.github.ajayanuragi.job_tracker.dto.request.ApplicationPatchRequest;
 import io.github.ajayanuragi.job_tracker.dto.request.ApplicationRequest;
+import io.github.ajayanuragi.job_tracker.dto.response.ApplicationResponse;
 import io.github.ajayanuragi.job_tracker.entity.Application;
 import io.github.ajayanuragi.job_tracker.entity.Job;
 import io.github.ajayanuragi.job_tracker.entity.User;
+import io.github.ajayanuragi.job_tracker.enums.ApplicationStatus;
 import io.github.ajayanuragi.job_tracker.enums.EmploymentType;
 import io.github.ajayanuragi.job_tracker.enums.WorkplaceType;
 import io.github.ajayanuragi.job_tracker.exception.ApplicationAlreadyExistsException;
@@ -14,9 +16,14 @@ import io.github.ajayanuragi.job_tracker.repository.JobRepository;
 import io.github.ajayanuragi.job_tracker.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,10 +31,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-
-import io.github.ajayanuragi.job_tracker.dto.response.ApplicationResponse;
-import io.github.ajayanuragi.job_tracker.enums.ApplicationStatus;
-
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -144,7 +147,7 @@ class ApplicationServiceTest {
     }
 
     @Test
-    void createApplication_throwsExceptionWhenUserNotFound(){
+    void createApplication_throwsExceptionWhenUserNotFound() {
         String email = "test@example.com";
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
@@ -223,19 +226,30 @@ class ApplicationServiceTest {
         when(application.getId()).thenReturn(3L);
         when(application.getStatus()).thenReturn(ApplicationStatus.APPLIED);
 
-        when(applicationRepository.findAllByUserId(1L))
-                .thenReturn(List.of(application));
+        when(applicationRepository.findAll(
+                ArgumentMatchers.<Specification<Application>>any(),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(application)));
 
-        List<ApplicationResponse> responses =
-                applicationService.getUserApplications(email);
+        Page<ApplicationResponse> responses =
+                applicationService.getUserApplications(
+                        email,
+                        null,
+                        null,
+                        null,
+                        Pageable.unpaged()
+                );
 
-        assertEquals(1, responses.size());
-        assertEquals(2L, responses.getFirst().jobId());
-        assertEquals("Java Developer", responses.getFirst().jobTitle());
-        assertEquals("ABC Company", responses.getFirst().companyName());
-        assertEquals(ApplicationStatus.APPLIED, responses.getFirst().status());
+        assertEquals(1, responses.getTotalElements());
+        assertEquals(2L, responses.getContent().getFirst().jobId());
+        assertEquals("Java Developer", responses.getContent().getFirst().jobTitle());
+        assertEquals("ABC Company", responses.getContent().getFirst().companyName());
+        assertEquals(ApplicationStatus.APPLIED, responses.getContent().getFirst().status());
 
-        verify(applicationRepository).findAllByUserId(1L);
+        verify(applicationRepository).findAll(
+                ArgumentMatchers.<Specification<Application>>any(),
+                any(Pageable.class)
+        );
     }
 
     @Test
@@ -298,10 +312,15 @@ class ApplicationServiceTest {
 
         assertThrows(
                 ResourceNotFoundException.class,
-                () -> applicationService.getUserApplications(email)
+                () -> applicationService.getUserApplications(
+                        email,
+                        null,
+                        null,
+                        null,
+                        Pageable.unpaged())
         );
 
-        verify(applicationRepository, never()).findAllByUserId(anyLong());
+        verify(applicationRepository, never()).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test

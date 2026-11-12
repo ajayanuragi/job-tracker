@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -17,8 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -86,16 +87,22 @@ class ApplicationControllerTest {
                 "Applied through company website", appliedAt, appliedAt
         );
 
-        when(applicationService.getUserApplications("test@example.com"))
-                .thenReturn(List.of(response));
+        when(applicationService.getUserApplications(
+                eq("test@example.com"),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(response)));
+
 
         mockMvc.perform(get("/api/applications")
                         .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].jobId").value(2))
-                .andExpect(jsonPath("$[0].jobTitle").value("Java Developer"))
-                .andExpect(jsonPath("$[0].status").value("APPLIED"));
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].jobId").value(2))
+                .andExpect(jsonPath("$.content[0].jobTitle").value("Java Developer"))
+                .andExpect(jsonPath("$.content[0].status").value("APPLIED"));
     }
 
     @Test
