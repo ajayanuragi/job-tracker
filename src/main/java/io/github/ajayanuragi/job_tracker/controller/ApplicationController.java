@@ -3,6 +3,7 @@ package io.github.ajayanuragi.job_tracker.controller;
 import io.github.ajayanuragi.job_tracker.dto.request.ApplicationPatchRequest;
 import io.github.ajayanuragi.job_tracker.dto.request.ApplicationRequest;
 import io.github.ajayanuragi.job_tracker.dto.response.ApplicationResponse;
+import io.github.ajayanuragi.job_tracker.enums.ApplicationStatus;
 import io.github.ajayanuragi.job_tracker.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,6 +11,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -47,17 +51,21 @@ public class ApplicationController {
     }
 
     @Operation(summary = "Get all tracked applications",
-            description = "Returns all applications belonging to the authenticated user")
+            description = "Returns the authenticated user's applications with optional filtering, pagination, and sorting")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Applications retrieved successfully"),
             @ApiResponse(responseCode = "401", description = "Authentication required")
     })
     @GetMapping
-    public ResponseEntity<List<ApplicationResponse>> getUserApplications(
-            @AuthenticationPrincipal Jwt jwt
+    public ResponseEntity<Page<ApplicationResponse>> getUserApplications(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) ApplicationStatus status,
+            @RequestParam(required = false) String companyName,
+            @RequestParam(required = false) String jobTitle,
+            @ParameterObject Pageable pageable
     ) {
-        List<ApplicationResponse> applications =
-                applicationService.getUserApplications(jwt.getSubject());
+        Page<ApplicationResponse> applications =
+                applicationService.getUserApplications(jwt.getSubject(), status, companyName, jobTitle, pageable);
 
         return ResponseEntity.ok(applications);
     }
