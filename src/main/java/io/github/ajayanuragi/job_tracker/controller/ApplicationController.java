@@ -5,6 +5,7 @@ import io.github.ajayanuragi.job_tracker.dto.request.ApplicationRequest;
 import io.github.ajayanuragi.job_tracker.dto.response.ApplicationResponse;
 import io.github.ajayanuragi.job_tracker.enums.ApplicationStatus;
 import io.github.ajayanuragi.job_tracker.service.ApplicationService;
+import io.github.ajayanuragi.job_tracker.validation.SortFieldValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,6 +22,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -29,9 +31,11 @@ import java.util.List;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
+    private final SortFieldValidator sortFieldValidator;
 
-    public ApplicationController(ApplicationService applicationService) {
+    public ApplicationController(ApplicationService applicationService, SortFieldValidator sortFieldValidator) {
         this.applicationService = applicationService;
+        this.sortFieldValidator = sortFieldValidator;
     }
 
     @Operation(summary = "Track a job application",
@@ -64,6 +68,12 @@ public class ApplicationController {
             @RequestParam(required = false) String jobTitle,
             @ParameterObject Pageable pageable
     ) {
+        sortFieldValidator.validate(
+                pageable,
+                Set.of("appliedAt", "createdAt", "updatedAt", "status")
+        );
+
+
         Page<ApplicationResponse> applications =
                 applicationService.getUserApplications(jwt.getSubject(), status, companyName, jobTitle, pageable);
 

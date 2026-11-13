@@ -5,6 +5,7 @@ import io.github.ajayanuragi.job_tracker.dto.request.ApplicationRequest;
 import io.github.ajayanuragi.job_tracker.dto.response.ApplicationResponse;
 import io.github.ajayanuragi.job_tracker.enums.ApplicationStatus;
 import io.github.ajayanuragi.job_tracker.service.ApplicationService;
+import io.github.ajayanuragi.job_tracker.validation.SortFieldValidator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.mockito.Mockito.verify;
 
 @WebMvcTest(ApplicationController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, SortFieldValidator.class})
 class ApplicationControllerTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -231,5 +232,31 @@ class ApplicationControllerTest {
                                 pageable.getSort().getOrderFor("appliedAt").isDescending()
                 )
         );
+    }
+
+    @Test
+    void getUserApplications_returnsBadRequestForUnsupportedSortField() throws Exception {
+        mockMvc.perform(get("/api/applications")
+                        .param("sort", "password,desc")
+                        .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Sorting by password is not supported"));
+    }
+
+    @Test
+    void getUserApplications_acceptsSupportedSortField() throws Exception {
+        when(applicationService.getUserApplications(
+                eq("test@example.com"),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/applications")
+                        .param("sort", "appliedAt,desc")
+                        .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
+                .andExpect(status().isOk());
     }
 }
