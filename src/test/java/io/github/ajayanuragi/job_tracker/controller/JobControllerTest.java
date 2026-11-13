@@ -1,34 +1,45 @@
 package io.github.ajayanuragi.job_tracker.controller;
 
+import io.github.ajayanuragi.job_tracker.config.SecurityConfig;
 import io.github.ajayanuragi.job_tracker.dto.request.JobPatchRequest;
 import io.github.ajayanuragi.job_tracker.dto.request.JobRequest;
 import io.github.ajayanuragi.job_tracker.dto.response.JobResponse;
 import io.github.ajayanuragi.job_tracker.enums.EmploymentType;
 import io.github.ajayanuragi.job_tracker.enums.WorkplaceType;
 import io.github.ajayanuragi.job_tracker.service.JobService;
+import io.github.ajayanuragi.job_tracker.validation.SortFieldValidator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.any;
 
 
 @WebMvcTest(JobController.class)
+@Import(SortFieldValidator.class)
+@AutoConfigureMockMvc(addFilters = false)
 class JobControllerTest {
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @MockitoBean
     private JobService jobService;
@@ -65,9 +76,9 @@ class JobControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.content[0].title").value("Java Backend Developer"))
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.totalPages").value(1))
-                .andExpect(jsonPath("$.sort.sorted").value(true));
+                .andExpect(jsonPath("$.page.totalElements").value(1))
+                .andExpect(jsonPath("$.page.totalPages").value(1));
+
     }
 
     @Test
@@ -194,17 +205,18 @@ class JobControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Senior Java Developer"));
     }
+
     @Test
     void create_whenRequiredFieldsAreMissing_returnsBadRequest() throws Exception {
         String invalidRequest = """
-            {
-                "title": "",
-                "companyName": "",
-                "description": "",
-                "employmentType": "FULL_TIME",
-                "workplaceType": "REMOTE"
-            }
-            """;
+                {
+                    "title": "",
+                    "companyName": "",
+                    "description": "",
+                    "employmentType": "FULL_TIME",
+                    "workplaceType": "REMOTE"
+                }
+                """;
         mockMvc.perform(post("/api/jobs")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidRequest)
@@ -214,14 +226,14 @@ class JobControllerTest {
     @Test
     void update_whenRequiredFieldsAreMissing_returnsBadRequest() throws Exception {
         String invalidRequest = """
-            {
-                "title": "",
-                "companyName": "",
-                "description": "",
-                "employmentType": "FULL_TIME",
-                "workplaceType": "REMOTE"
-            }
-            """;
+                {
+                    "title": "",
+                    "companyName": "",
+                    "description": "",
+                    "employmentType": "FULL_TIME",
+                    "workplaceType": "REMOTE"
+                }
+                """;
 
         mockMvc.perform(put("/api/jobs/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -243,5 +255,24 @@ class JobControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void getAllJobs_returnsBadRequestForUnsupportedSortField() throws Exception {
+        mockMvc.perform(get("/api/jobs")
+                        .param("sort", "password,desc")
+                        .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Sorting by password is not supported"));
+    }
+
+    @Test
+    void getAllJobs_acceptsSupportedSortField() throws Exception {
+        when(jobService.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/jobs")
+                        .param("sort", "createdAt,desc"))
+                .andExpect(status().isOk());
+    }
 
 }

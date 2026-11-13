@@ -4,6 +4,7 @@ import io.github.ajayanuragi.job_tracker.dto.request.JobPatchRequest;
 import io.github.ajayanuragi.job_tracker.dto.request.JobRequest;
 import io.github.ajayanuragi.job_tracker.dto.response.JobResponse;
 import io.github.ajayanuragi.job_tracker.service.JobService;
+import io.github.ajayanuragi.job_tracker.validation.SortFieldValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,6 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
+
 
 @Tag(name = "Jobs", description = "Operations for managing job listings")
 @RestController
@@ -27,9 +30,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/jobs")
 public class JobController {
     private final JobService jobService;
+    private final SortFieldValidator sortFieldValidator;
 
-    public JobController(JobService jobService) {
+    public JobController(JobService jobService, SortFieldValidator sortFieldValidator) {
         this.jobService = jobService;
+        this.sortFieldValidator = sortFieldValidator;
     }
 
     @Operation(
@@ -47,6 +52,10 @@ public class JobController {
                     description =
                             "Pagination and sorting. Supported sort fields: createdAt, title, companyName"
             ) @ParameterObject Pageable pageable) {
+        sortFieldValidator.validate(
+                pageable,
+                Set.of("createdAt", "title", "companyName")
+        );
         Page<JobResponse> jobs = jobService.findAll(pageable);
         return ResponseEntity.ok(jobs);
     }
