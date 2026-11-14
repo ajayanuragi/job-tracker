@@ -24,6 +24,12 @@ public class JwtConfig {
     @Bean
     public SecretKey jwtSecretKey() {
         byte[] keyBytes = Base64.getDecoder().decode(jwtProperties.getSecret());
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException(
+                    "JWT secret must be at least 256 bits (32 bytes)"
+            );
+        }
+
         return new SecretKeySpec(keyBytes, "HmacSHA256");
     }
 
