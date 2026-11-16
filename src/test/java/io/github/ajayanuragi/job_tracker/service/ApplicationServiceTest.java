@@ -320,7 +320,11 @@ class ApplicationServiceTest {
                         Pageable.unpaged())
         );
 
-        verify(applicationRepository, never()).findAll(any(Specification.class), any(Pageable.class));
+        verify(applicationRepository, never())
+                .findAll(
+                        ArgumentMatchers.<Specification<Application>>any(),
+                        any(Pageable.class)
+                );
     }
 
     @Test
@@ -462,5 +466,67 @@ class ApplicationServiceTest {
         );
 
         verify(applicationRepository).findByIdAndUserId(3L, 1L);
+    }
+
+    @Test
+    void applicationExists_returnsTrueWhenTracked() {
+        String email = "test@example.com";
+        Long jobId = 2L;
+
+        User user = mock(User.class);
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(1L);
+
+        when(applicationRepository.existsByUserIdAndJobId(1L, jobId))
+                .thenReturn(true);
+
+        boolean exists = applicationService.applicationExists(jobId, email);
+
+        assertTrue(exists);
+
+        verify(applicationRepository)
+                .existsByUserIdAndJobId(1L, jobId);
+    }
+
+
+    @Test
+    void applicationExists_returnsFalseWhenNotTracked() {
+        String email = "test@example.com";
+        Long jobId = 2L;
+
+        User user = mock(User.class);
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(1L);
+
+        when(applicationRepository.existsByUserIdAndJobId(1L, jobId))
+                .thenReturn(false);
+
+        boolean exists = applicationService.applicationExists(jobId, email);
+
+        assertFalse(exists);
+
+        verify(applicationRepository)
+                .existsByUserIdAndJobId(1L, jobId);
+    }
+
+    @Test
+    void applicationExists_throwsExceptionWhenUserNotFound() {
+        String email = "unknown@example.com";
+        Long jobId = 2L;
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> applicationService.applicationExists(jobId, email)
+        );
+
+        verify(applicationRepository, never())
+                .existsByUserIdAndJobId(anyLong(), anyLong());
     }
 }
