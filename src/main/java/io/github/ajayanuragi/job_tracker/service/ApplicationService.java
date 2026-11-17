@@ -107,16 +107,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
-    @Transactional(readOnly = true)
-    public boolean applicationExists(Long jobId, String userEmail) {
-        User user = getUserByEmail(userEmail);
-
-        return applicationRepository.existsByUserIdAndJobId(
-                user.getId(),
-                jobId
-        );
-    }
-
+    
     @Transactional(readOnly = true)
     public ApplicationResponse getApplicationByJobId(Long jobId, String userEmail) {
         User user = getUserByEmail(userEmail);

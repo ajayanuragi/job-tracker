@@ -115,31 +115,7 @@ public class ApplicationController {
         return ResponseEntity.ok(response);
 
     }
-
-
-    @Operation(
-            summary = "Check whether an application exists",
-            description = "Checks whether the authenticated user has already tracked a specific job"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Existence check completed"),
-            @ApiResponse(responseCode = "400", description = "Invalid job ID"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "404", description = "User not found")
-    })
-    @GetMapping("/exists")
-    public ResponseEntity<Boolean> applicationExists(
-            @RequestParam Long jobId,
-            @AuthenticationPrincipal Jwt jwt
-    ) {
-        boolean exists = applicationService.applicationExists(
-                jobId,
-                jwt.getSubject()
-        );
-
-        return ResponseEntity.ok(exists);
-    }
-
+    
     @Operation(
             summary = "Get an application by job ID",
             description = "Returns the authenticated user's application for a specific job"
