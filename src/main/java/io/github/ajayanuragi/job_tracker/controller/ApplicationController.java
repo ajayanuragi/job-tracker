@@ -21,7 +21,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -139,5 +138,25 @@ public class ApplicationController {
         );
 
         return ResponseEntity.ok(exists);
+    }
+
+    @Operation(
+            summary = "Get an application by job ID",
+            description = "Returns the authenticated user's application for a specific job"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Application retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Application not found")
+    })
+    @GetMapping("/by-job")
+    public ResponseEntity<ApplicationResponse> getApplicationByJobId(
+            @RequestParam Long jobId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        ApplicationResponse response =
+                applicationService.getApplicationByJobId(jobId, jwt.getSubject());
+
+        return ResponseEntity.ok(response);
     }
 }

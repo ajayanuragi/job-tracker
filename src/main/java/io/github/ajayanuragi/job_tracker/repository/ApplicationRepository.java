@@ -8,5 +8,7 @@ import java.util.Optional;
 public interface ApplicationRepository extends JpaRepository<Application, Long>, JpaSpecificationExecutor<Application> {
     Optional<Application> findByIdAndUserId(Long id, Long userId);
 
+    Optional<Application> findByUserIdAndJobId(Long userId, Long jobId);
+
     boolean existsByUserIdAndJobId(Long userId, Long jobId);
 }

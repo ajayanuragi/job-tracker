@@ -529,4 +529,78 @@ class ApplicationServiceTest {
         verify(applicationRepository, never())
                 .existsByUserIdAndJobId(anyLong(), anyLong());
     }
+
+    @Test
+    void getApplicationByJobId_returnsApplication() {
+        String email = "test@example.com";
+        Long jobId = 2L;
+
+        User user = mock(User.class);
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(1L);
+
+        Job job = mock(Job.class);
+        when(job.getId()).thenReturn(jobId);
+        when(job.getTitle()).thenReturn("Java Developer");
+        when(job.getCompanyName()).thenReturn("ABC Company");
+
+        Application application = mock(Application.class);
+        when(application.getId()).thenReturn(3L);
+        when(application.getJob()).thenReturn(job);
+        when(application.getStatus()).thenReturn(ApplicationStatus.APPLIED);
+
+        when(applicationRepository.findByUserIdAndJobId(1L, jobId))
+                .thenReturn(Optional.of(application));
+
+        ApplicationResponse response =
+                applicationService.getApplicationByJobId(jobId, email);
+
+        assertEquals(3L, response.id());
+        assertEquals(2L, response.jobId());
+        assertEquals("Java Developer", response.jobTitle());
+        assertEquals(ApplicationStatus.APPLIED, response.status());
+
+        verify(applicationRepository).findByUserIdAndJobId(1L, jobId);
+    }
+
+    @Test
+    void getApplicationByJobId_throwsExceptionWhenApplicationNotFound() {
+        String email = "test@example.com";
+        Long jobId = 2L;
+
+        User user = mock(User.class);
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(1L);
+
+        when(applicationRepository.findByUserIdAndJobId(1L, jobId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> applicationService.getApplicationByJobId(jobId, email)
+        );
+
+        verify(applicationRepository)
+                .findByUserIdAndJobId(1L, jobId);
+    }
+
+    @Test
+    void getApplicationByJobId_throwsExceptionWhenUserNotFound() {
+        String email = "unknown@example.com";
+        Long jobId = 2L;
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> applicationService.getApplicationByJobId(jobId, email)
+        );
+
+        verify(applicationRepository, never())
+                .findByUserIdAndJobId(anyLong(), anyLong());
+    }
 }
