@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-
 @Service
 public class ApplicationService {
     private final ApplicationRepository applicationRepository;
@@ -117,6 +115,19 @@ public class ApplicationService {
                 user.getId(),
                 jobId
         );
+    }
+
+    @Transactional(readOnly = true)
+    public ApplicationResponse getApplicationByJobId(Long jobId, String userEmail) {
+        User user = getUserByEmail(userEmail);
+
+        Application application = applicationRepository
+                .findByUserIdAndJobId(user.getId(), jobId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Application not found")
+                );
+
+        return mapToResponse(application);
     }
 
     private ApplicationResponse mapToResponse(Application application) {

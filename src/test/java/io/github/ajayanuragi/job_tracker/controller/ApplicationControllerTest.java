@@ -197,10 +197,11 @@ class ApplicationControllerTest {
                 isNull(),
                 isNull(),
                 isNull(),
-                argThat(pageable ->
-                        pageable.getSort().getOrderFor("appliedAt") != null &&
-                                pageable.getSort().getOrderFor("appliedAt").isDescending()
-                )
+                argThat(pageable -> {
+                    var order = pageable.getSort().getOrderFor("appliedAt");
+
+                    return order != null && order.isDescending();
+                })
         );
     }
 
@@ -226,11 +227,14 @@ class ApplicationControllerTest {
                 isNull(),
                 isNull(),
                 isNull(),
-                argThat(pageable ->
-                        pageable.getPageNumber() == 2 &&
-                                pageable.getPageSize() == 10 &&
-                                pageable.getSort().getOrderFor("appliedAt").isDescending()
-                )
+                argThat(pageable -> {
+                    var order = pageable.getSort().getOrderFor("appliedAt");
+
+                    return pageable.getPageNumber() == 2
+                            && pageable.getPageSize() == 10
+                            && order != null
+                            && order.isDescending();
+                })
         );
     }
 
@@ -258,5 +262,30 @@ class ApplicationControllerTest {
                         .param("sort", "appliedAt,desc")
                         .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void getApplicationByJobId_returnsApplication() throws Exception {
+        LocalDateTime appliedAt = LocalDateTime.now();
+
+        ApplicationResponse response = new ApplicationResponse(
+                1L, 2L, "Java Developer", "ABC Company",
+                ApplicationStatus.APPLIED, appliedAt,
+                "Applied through company website", appliedAt, appliedAt
+        );
+
+        when(applicationService.getApplicationByJobId(2L, "test@example.com"))
+                .thenReturn(response);
+
+        mockMvc.perform(get("/api/applications/by-job")
+                        .param("jobId", "2")
+                        .with(jwt().jwt(jwt -> jwt.subject("test@example.com"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.jobId").value(2))
+                .andExpect(jsonPath("$.jobTitle").value("Java Developer"));
+
+        verify(applicationService)
+                .getApplicationByJobId(2L, "test@example.com");
     }
 }
